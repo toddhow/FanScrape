@@ -192,6 +192,77 @@ def lookup_scene(file, db, media_dir, username, network):
 
     return scrape
     
+# IMAGES ##########################################################################################
+def lookup_image(file, db, media_dir, username, network):
+    """
+    Query database for image metadata and create a structured scrape result.
+    """
+    sqlite3.register_converter("timestamp", convert_datetime)
+    sqlite3.register_converter("created_at", convert_datetime)
+    log.info(f"Using database: {db} for {file}")
+    conn = sqlite3.connect(
+        db, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+    )
+
+    c = conn.cursor()
+    c.execute("""
+        SELECT medias.filename, medias.post_id, match.api_type
+        FROM medias
+        JOIN (
+            SELECT api_type, post_id
+            FROM medias
+            WHERE medias.filename = ?
+        ) AS match
+        ON medias.post_id = match.post_id
+        WHERE medias.media_type = 'Images'
+        ORDER BY medias.id ASC
+    """, (file.name,))
+
+    result = c.fetchall()
+
+    if not result:
+        log.error(f'Could not find metadata for image: {file}')
+        print('null')
+        sys.exit()
+
+    api_type = result[0][2]
+    post_id = result[0][1]
+
+    api_type = sanitize_api_type(api_type)
+
+    if api_type in ("Posts", "Stories", "Messages", "Products", "Others"):
+        query = f"""
+            SELECT posts.post_id, posts.created_at
+            FROM {api_type.lower()} AS posts, medias
+            WHERE posts.post_id = medias.post_id
+            AND medias.filename = ?
+        """
+        c.execute(query, (file.name,))
+    else:
+        log.error(f"Unknown api_type {api_type} for post: {post_id}")
+        print('null')
+        sys.exit()
+    
+    log.debug(f'Found {len(result)} images(s) in post {post_id}')
+    if len(result) > 1:
+        image_index = [item[0] for item in result].index(file.name) + 1
+        log.debug(f'Image is {image_index} of {len(result)} in post')
+    else:
+        image_index = 0
+    
+    image = process_row(c.fetchone(), username, network, image_index)
+
+    scrape = {
+        "title": image["title"], "date": image["date"],
+        "code": image["code"], "urls": image["urls"],
+        "studio": get_studio_info(username, network),
+        "performers": get_performer_info(username, media_dir)
+    }
+    if api_type == "Messages" and TAG_MESSAGES:
+        scrape["tags"] = [{"name": TAG_MESSAGES_NAME}]
+
+    return scrape
+
 
 # GALLERIES ########################################################################################
 def lookup_gallery(file, db, media_dir, username, network):
