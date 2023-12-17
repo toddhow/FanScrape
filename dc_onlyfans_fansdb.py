@@ -510,7 +510,7 @@ def sanitize_api_type(api_type):
     """
     api_types = ["Posts", "Stories", "Messages", "Products", "Others"]
     bad_types = {
-        "Timeline": "Post",
+        "Timeline": "Posts",
         "Message": "Messages"
     }
 
