@@ -333,6 +333,20 @@ def get_scene_path(scene_id):
     sys.exit()
 
 
+def get_image_path(image_id):
+    """
+    Find and return the path for a image by its ID.
+    """
+    image = stash.find_image(image_id)
+    # log.debug(image)
+    if image:
+        return image["files"][0]["path"]
+
+    log.error(f'Path for image {image_id} could not be found')
+    print('null')
+    sys.exit()
+
+
 def get_gallery_path(gallery_id):
     """
     Find and return the path for a gallery by its ID.
