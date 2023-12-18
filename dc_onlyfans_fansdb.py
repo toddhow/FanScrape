@@ -179,6 +179,7 @@ def lookup_scene(file, db, media_dir, username, network):
         log.debug(f'Video is {scene_index} of {len(result)} in post')
     else:
         scene_index = 0
+        scene_count = 0
 
     scene = process_row(c.fetchone(), username, network, scene_index, scene_count)
 
