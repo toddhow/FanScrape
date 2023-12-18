@@ -1,4 +1,7 @@
-# StashThatMetadata (FansDB)
+# FanScrape (FansDB)
+
+> [!NOTE]\
+> This a fork of [dc_onlyfans_fansdb](https://github.com/stashapp/CommunityScrapers/tree/master/scrapers/dc_onlyfans_fansdb) 
 
 This script is a companion to the OnlyFans/Fansly data scrapers by DIGITALCRIMINAL and derivatives.\
 Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.db' SQLite files.
