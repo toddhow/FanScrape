@@ -175,11 +175,13 @@ def lookup_scene(file, db, media_dir, username, network):
     log.debug(f'Found {len(result)} video(s) in post {post_id}')
     if len(result) > 1:
         scene_index = [item[0] for item in result].index(file.name) + 1
+        scene_count = len(result)
         log.debug(f'Video is {scene_index} of {len(result)} in post')
     else:
         scene_index = 0
+        scene_count = 0
 
-    scene = process_row(c.fetchone(), username, network, scene_index)
+    scene = process_row(c.fetchone(), username, network, scene_index, scene_count)
 
     scrape = {
         "title": scene["title"], "details": scene["details"], "date": scene["date"],
@@ -413,7 +415,7 @@ def truncate_title(title, max_length):
     return title[:last_space_index]
 
 
-def format_title(title, username, date, scene_index):
+def format_title(title, username, date, scene_index, scene_count):
     """
     Format a post title based on various conditions.
     """
@@ -436,11 +438,11 @@ def format_title(title, username, date, scene_index):
         scene_info = f' ({scene_index})' if scene_index > 0 else ''
         return f'{t_title} - {date}{scene_info}'
 
-    scene_info = f' ({scene_index})' if scene_index > 0 else ''
+    scene_info = f' {scene_index}/{scene_count}' if scene_index > 0 else ''
     return f'{f_title}{scene_info}'
 
 
-def process_row(row, username, network, scene_index=0):
+def process_row(row, username, network, scene_index=0, scene_count=0):
     """
     Process a database row and format post details.
     """
@@ -450,7 +452,7 @@ def process_row(row, username, network, scene_index=0):
         
     res = {}
     res['date'] = date.strftime("%Y-%m-%d")
-    res['title'] = format_title(row[1], username, res['date'], scene_index)
+    res['title'] = format_title(row[1], username, res['date'], scene_index, scene_count)
     res['details'] = row[1]
     res['code'] = str(row[0])
     if network == 'OnlyFans':
