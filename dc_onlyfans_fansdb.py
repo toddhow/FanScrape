@@ -509,10 +509,13 @@ def validate_datetime(timestamp):
 def sanitize_api_type(api_type):
     """
     Replace incorrect api_types
+
+    Mostly used for content scraped by DataWhores/OF-Scraper
     """
     api_types = ["Posts", "Stories", "Messages", "Products", "Others"]
     bad_types = {
         "Timeline": "Posts",
+        "Pinned": "Posts",
         "Message": "Messages"
     }
 
