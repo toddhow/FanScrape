@@ -124,13 +124,13 @@ If desired this behavior can be tweaked by changing these values in `config.json
 
 ### Tags
 
-By default, the scraper will tag scenes and galleries sent as messages with the tag `[STM: Messages]`.
+By default, the scraper will tag scenes and galleries sent as messages with the tag `[FS: Messages]`.
 
 This behaviour is configurable by changing these values in `config.json`:
 
 ```
   "tag_messages": True,                   # Whether to tag messages.
-  "tag_messages_name": "[STM: Messages]",  # Name of tag for messages.
+  "tag_messages_name": "[FS: Messages]",  # Name of tag for messages.
 ```
 
 ## Configuration
@@ -154,7 +154,7 @@ The values in the default config are as follows:
     },
     "max_title_length": 64,                 # Maximum length for scene/gallery titles.
     "tag_messages": True,                   # Whether to tag messages.
-    "tag_messages_name": "[STM: Messages]",  # Name of tag for messages.
+    "tag_messages_name": "[FS: Messages]",  # Name of tag for messages.
     "max_performer_images": 3,              # Maximum performer images to generate.
     "cache_time": 300,                      # Image expiration time (in seconds).
     "cache_dir": "cache",                   # Directory to store cached base64 encoded images.

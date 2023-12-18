@@ -39,7 +39,7 @@ default_config = {
     },
     "max_title_length": 64,  # Maximum length for scene/gallery titles.
     "tag_messages": True,  # Whether to tag messages.
-    "tag_messages_name": "[STM: Messages]",  # Name of tag for messages.
+    "tag_messages_name": "[FS: Messages]",  # Name of tag for messages.
     "max_performer_images": 3,  # Maximum performer images to generate.
     "cache_time": 300,  # Image expiration time (in seconds).
     "cache_dir": "cache",  # Directory to store cached base64 encoded images.
