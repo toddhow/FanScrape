@@ -516,7 +516,8 @@ def sanitize_api_type(api_type):
     bad_types = {
         "Timeline": "Posts",
         "Pinned": "Posts",
-        "Message": "Messages"
+        "Message": "Messages",
+        "Highlights": "Stories"
     }
 
     if api_type not in api_types:
