@@ -1,7 +1,7 @@
 # FanScrape (FansDB)
 
 > [!NOTE]\
-> This a fork of [dc_onlyfans_fansdb](https://github.com/stashapp/CommunityScrapers/tree/master/scrapers/dc_onlyfans_fansdb) 
+> This a fork of [dc_onlyfans_fansdb](https://github.com/stashapp/CommunityScrapers/tree/master/scrapers/dc_onlyfans_fansdb)
 
 This script is a companion to the OnlyFans/Fansly data scrapers by DIGITALCRIMINAL and derivatives.\
 Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.db' SQLite files.
@@ -14,6 +14,15 @@ Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.
 [UltimaHoarder/UltimaScraper](https://github.com/UltimaHoarder/UltimaScraper)
 
 [datawhores/OF-Scraper](https://github.com/datawhores/OF-Scraper)
+
+> [!IMPORTANT]\
+> If you are using datawhores/OF-Scraper you will need to change your scraper config.
+> The options you need to change can be found below.
+
+```JSON
+"dir_format": "{sitename}/{model_username}/{responsetype}/{value}/{mediatype}",
+"metadata": "{save_location}/{sitename}/{model_username}/Metadata",
+```
 
 ## Scenes
 
