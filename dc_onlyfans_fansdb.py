@@ -206,14 +206,13 @@ def lookup_gallery(file, db, media_dir, username, network):
     conn = sqlite3.connect(
         db, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
     )
-
     c = conn.cursor()
     # which media type should we look up for our file?
     c.execute("""
         SELECT DISTINCT api_type, post_id
         FROM medias
         WHERE medias.directory = ?
-    """, (file.as_posix(),))
+    """, (str(file.resolve()),))
     row = c.fetchone()
     if not row:
         log.error(f'Could not find metadata for gallery: {file}')
