@@ -8,7 +8,7 @@ import json
 import sys
 import re
 import sqlite3
-from pathlib import Path
+from pathlib import Path, PurePath
 import time
 import random
 import uuid
@@ -208,10 +208,12 @@ def lookup_gallery(file, db, media_dir, username, network):
     )
     c = conn.cursor()
     # which media type should we look up for our file?
+    log.info(str(file.resolve()))
     c.execute("""
         SELECT DISTINCT api_type, post_id
         FROM medias
         WHERE medias.directory = ?
+        COLLATE NOCASE
     """, (str(file.resolve()),))
     row = c.fetchone()
     if not row:
