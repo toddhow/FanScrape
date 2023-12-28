@@ -24,15 +24,6 @@ Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.
 "metadata": "{save_location}/{sitename}/{model_username}/Metadata",
 ```
 
-## Installation
-
-Place `dc_onlyfans_fansdb.py` & `dc_onlyfans_fansdb.yml` in the `scrapers` folder found in your Stash directory.
-
-Example:
-```
-D:\stash\scrapers
-```
-
 ## Scenes
 
 The post information for scenes will be scraped from the metadata database based on file name.

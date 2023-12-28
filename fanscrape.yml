@@ -1,17 +1,17 @@
-name: "DC OnlyFans (FansDB)"
+name: "FanScrape"
 sceneByFragment:
   action: script
   script:
     - python
     # use python3 instead if needed
-    - dc_onlyfans_fansdb.py
+    - fanscrape.py
     - queryScene
 galleryByFragment:
   action: script
   script:
     - python
     # use python3 instead if needed
-    - dc_onlyfans_fansdb.py
+    - fanscrape.py
     - queryGallery
 
-# Last Updated October 21, 2023
+# Last Updated December 27, 2023
