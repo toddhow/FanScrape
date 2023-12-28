@@ -2,8 +2,6 @@
 
 # outputs to _site with the following structure:
 # index.yml
-# <scraper_id>.zip
-# Each zip file contains the scraper.yml file and any other files in the same directory
 # This script is from the stashapp/CommunityScrapers repo https://github.com/stashapp/CommunityScrapers/blob/stable/build_site.sh
 
 outdir="$1"
@@ -27,12 +25,7 @@ buildScraper()
 
     zipfile=$(realpath "$outdir/fanscrape.zip")
 
-    ignore=$(grep "^# ignore:" "$f" | cut -c 10- | sed -e 's/\r//')
-
-    ignore="-x $ignore package"
-
-    zip -r "$zipfile" . ${ignore} > /dev/null
-    popd > /dev/null
+    zip -r "$zipfile" .
 
     # write to spec index
 
