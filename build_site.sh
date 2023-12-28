@@ -28,7 +28,7 @@ buildScraper()
     zip -r "$zipfile" fanscrape.py fanscrape.yml
 
     # write to spec index
-    printf(outdir)
+    printf($outdir)
 
     echo "- id: fanscrape
   name: "fanscrape"
