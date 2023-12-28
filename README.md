@@ -24,6 +24,27 @@ Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.
 "metadata": "{save_location}/{sitename}/{model_username}/Metadata",
 ```
 
+## Installation
+
+### Managed
+
+- Go to Settings > Metadata Providers > Available Scrapers.
+
+- Click the `Add Source` button.
+
+- Insert the following values into their corresponding field
+```
+Name: FanScrape
+Source URL: https://toddhow.github.io/FanScrape/stable/index.yml
+Local Path: fanscrape
+```
+
+- Select FanScrape, then press the `Install` button.
+
+### Manual
+
+Instructions for manually install scrapers can be found in [Stash's Documentation](https://docs.stashapp.cc/add-ons/scrapers/#installation)
+
 ## Scenes
 
 The post information for scenes will be scraped from the metadata database based on file name.
