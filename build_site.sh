@@ -40,7 +40,7 @@ buildScraper()
   version: $version
   date: $updated
   path: fanscrape.zip
-  sha256: $(sha256sum "$zipfile" | cut -d' ' -f1)" >> "$outdir"/index.yml
+  sha256: $(sha256sum "$zipfile" | cut -d' ' -f1)" >> "$outdir"/index.yml"
 
     echo "" >> "$outdir"/index.yml
 }
