@@ -25,7 +25,7 @@ buildScraper()
 
     zipfile=$(realpath "$outdir/fanscrape.zip")
 
-    zip -r "$zipfile" fanscrape.py fanscrape.yml
+    zip -r "$zipfile" fanscrape.py fanscrape.yml requirements.txt
 
     # write to spec index
     
