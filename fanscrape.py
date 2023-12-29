@@ -283,21 +283,12 @@ def get_performer_info(username, media_dir):
     """
     Resolve performer based on username
     """
-    req = stash.find_performers(
-        f={
-            "name": {"value": username, "modifier": "EQUALS"},
-            "OR":{
-                "aliases": {"value": username, "modifier": "EQUALS"}
-            }
-        },
-        filter={"page": 1, "per_page": 5},
-        fragment="id, name, aliases",  # type: ignore
-    )
+    req = stash.find_performer(username)
     log.debug(f'found performer(s): {req}')
     res: Dict = {}
-    if len(req) == 1:
-        log.debug(f"Found performer id: {req[0]['id']}")
-        res['stored_id'] = req[0]['id']
+    if req:
+        log.debug(f"Found performer id: {req['id']}")
+        res['stored_id'] = req['id']
     res['name'] = username
 
     images = get_performer_images(media_dir)
@@ -364,6 +355,7 @@ def get_performer_images(path):
 
     if len(image_list) == 0:  # if no images found
         log.warning(f'No image(s) found for path: {path}')
+
         return None
 
     # if images found, encode up to `max_images` to base64
@@ -395,7 +387,6 @@ def get_performer_images(path):
     # Store the file name and timestamp in the cache
     cache[f'{path}'] = (time.time(), cache_filenames)
     save_cache(cache)
-
     return encoded_images
 
 
@@ -517,6 +508,7 @@ def sanitize_api_type(api_type):
     bad_types = {
         "Timeline": "Posts",
         "Pinned": "Posts",
+        "Archived": "Posts",
         "Message": "Messages",
         "Highlights": "Stories"
     }
