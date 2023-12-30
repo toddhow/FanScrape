@@ -14,6 +14,7 @@ import random
 import uuid
 from typing import Dict
 from datetime import datetime
+from bs4 import BeautifulSoup
 
 try:
     from stashapi import log
@@ -445,7 +446,7 @@ def process_row(row, username, network, scene_index=0, scene_count=0):
     res = {}
     res['date'] = date.strftime("%Y-%m-%d")
     res['title'] = format_title(row[1], username, res['date'], scene_index, scene_count)
-    res['details'] = row[1]
+    res['details'] = sanitize_string(row[1])
     res['code'] = str(row[0])
     if network == 'OnlyFans':
         res['urls'] = [f"https://onlyfans.com/{res['code']}/{username}"]
@@ -517,6 +518,24 @@ def sanitize_api_type(api_type):
         if api_type in bad_types:
             api_type = bad_types[api_type]
     return api_type
+
+def sanitize_string(string):
+    """
+    Parses and sanitizes strings to remove HTML tags
+    """
+    if string:
+        try:
+            import lxml as unused_lxml_
+
+            html_parser = "lxml"
+        except ImportError:
+            html_parser = "html.parser"
+
+        string = re.sub("<[^>]*>", "", string)
+        string = " ".join(string.split())
+        string = BeautifulSoup(string, html_parser).get_text()
+        return string
+    return string
             
 
 # MAIN #############################################################################################
