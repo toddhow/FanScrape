@@ -478,9 +478,10 @@ def get_path_info(path):
     """
     network = 'Fansly' if 'Fansly' in str(path) else 'OnlyFans'
     try:
-        index = path.parts.index(network)
+        path_parts = [item.lower() for item in path.parts]
+        index = path_parts.index(network.lower())
         if index + 1 < len(path.parts):
-            return path.parts[index + 1], network, Path(*path.parts[:index + 2])
+            return  path.parts[index + 1], network, Path(*path.parts[:index + 2])
         raise ValueError
     except ValueError:
         log.error(f'Could not find username or network in path: {path}')
