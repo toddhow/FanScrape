@@ -182,7 +182,7 @@ def lookup_scene(file, db, media_dir, username, network):
         scene_index = 0
         scene_count = 0
 
-    scene = process_row(c.fetchone(), username, network, scene_index, scene_count)
+    scene = process_row(c.fetchone(), username, network, file.name, scene_index, scene_count)
 
     scrape = {
         "title": scene["title"], "details": scene["details"], "date": scene["date"],
@@ -435,7 +435,7 @@ def format_title(title, username, date, scene_index, scene_count):
     return f'{f_title}{scene_info}'
 
 
-def process_row(row, username, network, scene_index=0, scene_count=0):
+def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     """
     Process a database row and format post details.
     """
@@ -447,11 +447,11 @@ def process_row(row, username, network, scene_index=0, scene_count=0):
     res['date'] = date.strftime("%Y-%m-%d")
     res['title'] = format_title(row[1], username, res['date'], scene_index, scene_count)
     res['details'] = sanitize_string(row[1])
-    res['code'] = str(row[0])
+    res['code'] = filename
     if network == 'OnlyFans':
-        res['urls'] = [f"https://onlyfans.com/{res['code']}/{username}"]
+        res['urls'] = [f"https://onlyfans.com/{str(row[0])}/{username}"]
     elif network == 'Fansly':
-        res['urls'] = [f"https://fansly.com/post/{res['code']}"]
+        res['urls'] = [f"https://fansly.com/post/{str(row[0])}"]
     return res
 
 
