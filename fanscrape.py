@@ -9,12 +9,13 @@ import sys
 import re
 import sqlite3
 from pathlib import Path, PurePath
+from html import unescape
 import time
 import random
 import uuid
 from typing import Dict
 from datetime import datetime
-from bs4 import BeautifulSoup
+from pytz import timezone
 
 try:
     from stashapi import log
@@ -183,13 +184,21 @@ def lookup_scene(file, db, media_dir, username, network):
         scene_count = 0
 
     scene = process_row(c.fetchone(), username, network, file.name, scene_index, scene_count)
-
+    #log.debug(f'Date is: {scene["date"]}')
     scrape = {
         "title": scene["title"], "details": scene["details"], "date": scene["date"],
         "code": scene["code"], "urls": scene["urls"],
         "studio": get_studio_info(username, network),
-        "performers": get_performer_info(username, media_dir)
     }
+    scrape["Performers"] = []
+    # parse usernames
+    usernames = searchPerformers(scrape)
+    usernames.append(username)
+    log.debug(f"{usernames=}")
+    for name in list(set(usernames)):
+        name = name.strip('.') # remove trailing full stop
+        scrape['Performers'].append({'Name': getnamefromalias(name)})
+
     if api_type == "Messages" and TAG_MESSAGES:
         scrape["tags"] = [{"name": TAG_MESSAGES_NAME}]
 
@@ -243,8 +252,15 @@ def lookup_gallery(file, db, media_dir, username, network):
         "title": gallery["title"], "details": gallery["details"], "date": gallery["date"],
         "urls": gallery["urls"],
         "studio": get_studio_info(username, network),
-        "performers": get_performer_info(username, media_dir)
     }
+    scrape["Performers"] = []
+    # parse usernames
+    usernames = searchPerformers(scrape)
+    log.debug(f"{usernames=}")
+    for name in list(set(usernames)):
+        name = name.strip('.') # remove trailing full stop
+        scrape['Performers'].append({'Name': getnamefromalias(name)})
+
     if api_type == "Messages" and TAG_MESSAGES:
         scrape["tags"] = [{"name": TAG_MESSAGES_NAME}]
 
@@ -264,6 +280,14 @@ def get_scene_path(scene_id):
     log.error(f'Path for scene {scene_id} could not be found')
     print('null')
     sys.exit()
+
+# alias search
+def getnamefromalias(alias):
+    perfs = stash.find_performers( f={"aliases":{"value": alias, "modifier":"EQUALS"}}, filter={"page":1, "per_page": 5}, fragment= "name" )
+    log.debug(perfs)
+    if len(perfs):
+        return perfs[0]['name']
+    return alias
 
 
 def get_gallery_path(gallery_id):
@@ -297,6 +321,18 @@ def get_performer_info(username, media_dir):
         res["images"] = images
 
     return [res]
+
+def searchPerformers(scene):
+    pattern = re.compile(r"(?:^|\s)@([\w\-\.]+)")
+    content = unescape(scene['details'])
+    # if title is truncated, remove trailing dots and skip searching title
+    if scene['title'].endswith('..') and scene['title'].removesuffix('..') in content:
+        searchtext = content
+    else:
+        # if title is unique, search title and content
+        searchtext = scene['title'] + " " + content
+    usernames = re.findall(pattern,unescape(searchtext))
+    return usernames
 
 
 def get_studio_info(studio_name, studio_network):
@@ -442,7 +478,12 @@ def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     date = row[2]
     if validate_datetime(date):
         date = datetime.fromisoformat(date)
-        
+
+    #localtimezone = timezone('America/New_York')
+    #utctz = timezone('UTC')
+    #date = localtimezone.localize(date).astimezone(utctz)
+    #log.debug(f'Date timezone is: {date.tzinfo}')
+    #log.debug(f'Date is: {date}')
     res = {}
     res['date'] = date.strftime("%Y-%m-%d")
     res['title'] = format_title(row[1], username, res['date'], scene_index, scene_count)
@@ -531,10 +572,8 @@ def sanitize_string(string):
             html_parser = "lxml"
         except ImportError:
             html_parser = "html.parser"
-
-        string = re.sub("<[^>]*>", "", string)
-        string = " ".join(string.split())
-        string = BeautifulSoup(string, html_parser).get_text()
+        string = unescape(string).replace("<br /> ", "\n")
+        string = re.sub(r"<[^>]*>", "", string)
         return string
     return string
             
