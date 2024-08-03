@@ -45,7 +45,8 @@ default_config = {
     "max_performer_images": 3,  # Maximum performer images to generate.
     "cache_time": 300,  # Image expiration time (in seconds).
     "cache_dir": "cache",  # Directory to store cached base64 encoded images.
-    "cache_file": "cache.json"  # File to store cache information in.
+    "cache_file": "cache.json",  # File to store cache information in.
+    "meta_base_path": None,  # Base path to search for 'user_data.db' files.
 }
 
 # Read config file
@@ -68,6 +69,7 @@ MAX_TITLE_LENGTH = config['max_title_length']
 TAG_MESSAGES = config['tag_messages']
 TAG_MESSAGES_NAME = config['tag_messages_name']
 MAX_PERFORMER_IMAGES = config['max_performer_images']
+META_BASE_PATH = config['meta_base_path']
 CACHE_TIME = config['cache_time']
 CACHE_DIR = config['cache_dir']
 CACHE_FILE = config['cache_file']
@@ -203,7 +205,7 @@ def lookup_scene(file, db, media_dir, username, network):
         scrape["tags"] = [{"name": TAG_MESSAGES_NAME}]
 
     return scrape
-    
+
 
 # GALLERIES ########################################################################################
 def lookup_gallery(file, db, media_dir, username, network):
@@ -576,7 +578,7 @@ def sanitize_string(string):
         string = re.sub(r"<[^>]*>", "", string)
         return string
     return string
-            
+
 
 # MAIN #############################################################################################
 def main():
@@ -585,6 +587,7 @@ def main():
     """
     fragment = json.loads(sys.stdin.read())
     scrape_id = fragment["id"]
+    meta_path = None
 
     if sys.argv[1] == "queryScene":
         lookup = lookup_scene
@@ -598,7 +601,9 @@ def main():
         sys.exit()
 
     username, network, media_dir = get_path_info(path)
-    db = get_metadata_db(path, username, network)
+    if META_BASE_PATH:
+        meta_path = Path(META_BASE_PATH)
+    db = get_metadata_db(meta_path or path, username, network)
 
     media = lookup(path, db, media_dir, username, network)
     print(json.dumps(media))
