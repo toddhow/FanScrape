@@ -16,8 +16,9 @@ Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.
 [datawhores/OF-Scraper](https://github.com/datawhores/OF-Scraper)
 
 > [!IMPORTANT]\
-> If you are using datawhores/OF-Scraper you will need to change your scraper config.
-> The options you need to change can be found below.
+> If you are using datawhores/OF-Scraper you have two choices.
+> Either you will need to change your scraper config or add a setting to the [config.json](#configuration) file.
+> The options you need to change for OF-scraper can be found below.
 
 ```JSON
 "dir_format": "{sitename}/{model_username}/{responsetype}/{value}/{mediatype}",
@@ -188,7 +189,8 @@ The values in the default config are as follows:
     "max_performer_images": 3,              # Maximum performer images to generate.
     "cache_time": 300,                      # Image expiration time (in seconds).
     "cache_dir": "cache",                   # Directory to store cached base64 encoded images.
-    "cache_file": "cache.json"              # File to store cache information in.
+    "cache_file": "cache.json",             # File to store cache information in.
+    "meta_base_path": None,                 # Base path to search for 'user_data.db' files.
 }
 ```
 
