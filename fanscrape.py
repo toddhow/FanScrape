@@ -475,6 +475,8 @@ def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     """
     Process a database row and format post details.
     """
+    if row[1] is None:
+        row[1] = ""
     date = row[2]
     if validate_datetime(date):
         date = datetime.fromisoformat(date)
