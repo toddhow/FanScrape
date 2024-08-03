@@ -297,7 +297,9 @@ def get_gallery_path(gallery_id):
     gallery = stash.find_gallery(gallery_id)
     # log.debug(gallery)
     if gallery:
-        return gallery["folder"]["path"]
+        if gallery.get("folder",None):
+            if gallery["folder"].get("path",None):
+                return gallery["folder"]["path"]
 
     log.error(f'Path for gallery {gallery_id} could not be found')
     print('null')
