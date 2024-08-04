@@ -183,7 +183,36 @@ def lookup_scene(file, db, media_dir, username, network):
         scene_index = 0
         scene_count = 0
 
-    scene = process_row(c.fetchone(), username, network, file.name, scene_index, scene_count)
+    row = c.fetchone()
+
+    try:
+        if row[1] is None:
+            query = f"""
+                SELECT medias.post_id, 
+                COALESCE(posts.text, stories.text, messages.text, products.text, others.text, "") as text,
+                COALESCE(posts.created_at, stories.created_at, messages.created_at, products.created_at, others.created_at) as created_at
+                FROM medias
+                LEFT JOIN posts ON medias.post_id = posts.post_id
+                LEFT JOIN stories ON medias.post_id = stories.post_id
+                LEFT JOIN messages ON medias.post_id = messages.post_id
+                LEFT JOIN products ON medias.post_id = products.post_id
+                LEFT JOIN others ON medias.post_id = others.post_id
+                WHERE
+                (
+                    posts.post_id IS NOT NULL OR
+                    stories.post_id IS NOT NULL OR
+                    messages.post_id IS NOT NULL OR
+                    products.post_id IS NOT NULL OR
+                    others.post_id IS NOT NULL
+                )
+                AND medias.filename = ?;
+            """
+            c.execute(query, (file.name,))
+            row = c.fetchone()
+    except Exception as e:
+        log.error(f"The {db} is an old schema and {post_id} doesn't have any data in the {api_type} table.\n {e}")
+
+    scene = process_row(row, username, network, file.name, scene_index, scene_count)
     #log.debug(f'Date is: {scene["date"]}')
     scrape = {
         "title": scene["title"], "details": scene["details"], "date": scene["date"],
