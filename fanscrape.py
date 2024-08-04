@@ -523,6 +523,8 @@ def get_path_info(path):
     try:
         path_parts = [item.lower() for item in path.parts]
         index = path_parts.index(network.lower())
+        if (path.parts[index + 1] == "sites"):
+            index = path_parts.index(network.lower(), index + 1)
         if index + 1 < len(path.parts):
             return  path.parts[index + 1], network, Path(*path.parts[:index + 2])
         raise ValueError
