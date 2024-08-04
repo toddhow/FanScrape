@@ -1,3 +1,2 @@
 stashapp-tools
 sqlite3
-pytz

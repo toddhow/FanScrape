@@ -8,14 +8,13 @@ import json
 import sys
 import re
 import sqlite3
-from pathlib import Path, PurePath
+from pathlib import Path
 from html import unescape
 import time
 import random
 import uuid
 from typing import Dict
 from datetime import datetime
-from pytz import timezone
 
 try:
     from stashapi import log
@@ -452,7 +451,9 @@ def format_title(title, username, date, scene_index, scene_count):
         scene_info = f' ({scene_index})' if scene_index > 0 else ''
         return f'{username} - {date}{scene_info}'
 
-    f_title = truncate_title(title.split("\n")[0].strip().replace("<br />", ""), MAX_TITLE_LENGTH)
+    title = sanitize_string(title)
+
+    f_title = truncate_title(title.split("\n")[0].strip(), MAX_TITLE_LENGTH)
     scene_info = f' ({scene_index})' if scene_index > 0 else ''
 
     if len(f_title) <= 5:
@@ -479,11 +480,6 @@ def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     if validate_datetime(date):
         date = datetime.fromisoformat(date)
 
-    #localtimezone = timezone('America/New_York')
-    #utctz = timezone('UTC')
-    #date = localtimezone.localize(date).astimezone(utctz)
-    #log.debug(f'Date timezone is: {date.tzinfo}')
-    #log.debug(f'Date is: {date}')
     res = {}
     res['date'] = date.strftime("%Y-%m-%d")
     res['title'] = format_title(row[1], username, res['date'], scene_index, scene_count)
@@ -566,12 +562,6 @@ def sanitize_string(string):
     Parses and sanitizes strings to remove HTML tags
     """
     if string:
-        try:
-            import lxml as unused_lxml_
-
-            html_parser = "lxml"
-        except ImportError:
-            html_parser = "html.parser"
         string = unescape(string).replace("<br /> ", "\n")
         string = re.sub(r"<[^>]*>", "", string)
         return string
