@@ -628,7 +628,10 @@ def main():
 
     if sys.argv[1] == "queryScene":
         lookup = lookup_scene
-        path = Path(get_scene_path(scrape_id))
+        if fragment['files'] is not None:
+            path = Path(fragment['files'][0]['path'])
+        else:
+            path = Path(get_scene_path(scrape_id))
     elif sys.argv[1] == "queryGallery":
         lookup = lookup_gallery
         path = Path(get_gallery_path(scrape_id))
