@@ -6,6 +6,9 @@ This script requires python3, stashapp-tools, and sqlite3.
 """
 import json
 import sys
+import os
+import shutil
+import tempfile
 import re
 import sqlite3
 from pathlib import Path, PurePath
@@ -133,9 +136,7 @@ def lookup_scene(file, db, media_dir, username, network):
     sqlite3.register_converter("timestamp", convert_datetime)
     sqlite3.register_converter("created_at", convert_datetime)
     log.info(f"Using database: {db} for {file}")
-    conn = sqlite3.connect(
-        db, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-    )
+    conn = load_db_into_memory(db)
     c = conn.cursor()
 
     c.execute("""
@@ -233,6 +234,8 @@ def lookup_scene(file, db, media_dir, username, network):
     if api_type == "Messages" and TAG_MESSAGES:
         scrape["tags"] = [{"name": TAG_MESSAGES_NAME}]
 
+    conn.close()
+
     return scrape
 
 
@@ -244,9 +247,7 @@ def lookup_gallery(file, db, media_dir, username, network):
     sqlite3.register_converter("timestamp", convert_datetime)
     sqlite3.register_converter("created_at", convert_datetime)
     log.info(f"Using database: {db} for {file}")
-    conn = sqlite3.connect(
-        db, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-    )
+    conn = load_db_into_memory(db)
     c = conn.cursor()
     # which media type should we look up for our file?
     log.info(str(file.resolve()))
@@ -294,6 +295,8 @@ def lookup_gallery(file, db, media_dir, username, network):
 
     if api_type == "Messages" and TAG_MESSAGES:
         scrape["tags"] = [{"name": TAG_MESSAGES_NAME}]
+
+    conn.close()
 
     return scrape
 
@@ -617,6 +620,43 @@ def sanitize_string(string):
     return string
 
 
+def load_db_into_memory(db_file: str) -> sqlite3.Connection:
+    """
+    Copied the db_file into a temporary directory (for faster access),
+    incase the file is on a network drive.
+
+    Dumps the full db into SQL commands
+
+    Loads the SQL commands into an in-memory database
+    """
+    # Create a temporary directory to store the local copy of the database
+    with tempfile.TemporaryDirectory() as temp_dir:
+        local_db_path = os.path.join(temp_dir, os.path.basename(db_file))
+        # Copy the database file from the network drive to the local path
+        shutil.copy(db_file, local_db_path)
+
+        # Connect to the local copy of the database file
+        disk_conn = sqlite3.connect(
+            local_db_path, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+        )
+        
+        try:
+            # Dump the database into SQL commands
+            dump_commands = "".join([f"{line}\n" for line in disk_conn.iterdump()])
+        finally:
+            disk_conn.close()
+        
+        # Connect to an in-memory database
+        mem_conn = sqlite3.connect(
+            ":memory:", detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+        )
+        
+        # Execute the dump commands to recreate the database in memory
+        mem_conn.executescript(dump_commands)
+        
+        return mem_conn  # Return the in-memory connection
+
+
 # MAIN #############################################################################################
 def main():
     """
@@ -628,7 +668,10 @@ def main():
 
     if sys.argv[1] == "queryScene":
         lookup = lookup_scene
-        path = Path(get_scene_path(scrape_id))
+        if fragment['files'] is not None:
+            path = Path(fragment['files'][0]['path'])
+        else:
+            path = Path(get_scene_path(scrape_id))
     elif sys.argv[1] == "queryGallery":
         lookup = lookup_gallery
         path = Path(get_gallery_path(scrape_id))
