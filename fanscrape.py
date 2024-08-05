@@ -503,7 +503,7 @@ def get_metadata_db(search_path, username, network):
     search_path = Path(search_path).resolve()
 
     while search_path != search_path.parent:
-        db_files = list(search_path.rglob(f"{network}/**/{username}/**/user_data.db"))
+        db_files = list(search_path.rglob(f"{network}/**/{username}/**/user_data.db", case_sensitive=False))
         db_files = [db for db in db_files if db.is_file()]
         if db_files:
             return db_files[0]
