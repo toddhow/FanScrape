@@ -557,7 +557,7 @@ def get_path_info(path):
         """
         If the network is in the path multiple times get the last one
         """
-        indexes = [index for index, element in enumerate(path_parts) if element == network]
+        indexes = [index for index, element in enumerate(path_parts) if element == network.lower()]
         index = indexes[-1] if indexes else None
         if index + 1 < len(path.parts):
             return  path.parts[index + 1], network, Path(*path.parts[:index + 2])
@@ -658,7 +658,7 @@ def main():
 
     if sys.argv[1] == "queryScene":
         lookup = lookup_scene
-        if fragment['files'] is not None:
+        if fragment.get("files", None):
             path = Path(fragment['files'][0]['path'])
         else:
             path = Path(get_scene_path(scrape_id))
