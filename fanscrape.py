@@ -559,6 +559,8 @@ def get_path_info(path):
         """
         indexes = [index for index, element in enumerate(path_parts) if element == network.lower()]
         index = indexes[-1] if indexes else None
+        if index is None:
+            raise ValueError
         if index + 1 < len(path.parts):
             return  path.parts[index + 1], network, Path(*path.parts[:index + 2])
         raise ValueError
