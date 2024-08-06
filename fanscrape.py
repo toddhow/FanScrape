@@ -18,6 +18,8 @@ import random
 import uuid
 from typing import Dict
 from datetime import datetime
+import fnmatch
+
 
 try:
     from stashapi import log
@@ -537,7 +539,7 @@ def get_metadata_db(search_path, username, network):
     search_path = Path(search_path).resolve()
 
     while search_path != search_path.parent:
-        db_files = list(search_path.rglob(f"{network}/**/{username}/**/user_data.db", case_sensitive=False))
+        db_files = case_insensitive_rglob(path=search_path, pattern=f"{network}/**/{username}/**/user_data.db")
         db_files = [db for db in db_files if db.is_file()]
         if db_files:
             return db_files[0]
@@ -647,6 +649,18 @@ def load_db_into_memory(db_file: str) -> sqlite3.Connection:
         mem_conn.executescript(dump_commands)
         
         return mem_conn  # Return the in-memory connection
+
+
+def case_insensitive_rglob(path, pattern):
+    if sys.version_info >= (3, 12):
+        return list(path.rglob(pattern, case_sensitive=False))
+    else:
+        pattern_lower = pattern.lower()
+        matches = []
+        for p in path.rglob('*'):
+            if fnmatch.fnmatch(p.name.lower(), pattern_lower):
+                matches.append(p)
+        return matches
 
 
 # MAIN #############################################################################################
