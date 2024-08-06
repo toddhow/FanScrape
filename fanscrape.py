@@ -539,14 +539,19 @@ def get_metadata_db(search_path, username, network):
     search_path = Path(search_path).resolve()
 
     while search_path != search_path.parent:
-        db_files = case_insensitive_rglob(path=search_path, pattern=f"{network}/**/{username}/**/user_data.db")
+        try:
+            db_files = list(search_path.rglob(f"{network}/**/{username}/**/user_data.db", case_sensitive=False))
+        except TypeError:
+            log.info(f"Case-insensitive rglob failed, reverting to case-sensitive")
+            db_files = list(search_path.rglob(f"{network}/**/{username}/**/user_data.db"))
         db_files = [db for db in db_files if db.is_file()]
         if db_files:
             return db_files[0]
 
         search_path = search_path.parent
-
-    return None
+    log.error(f"Unable to find matadata file for pattern '{network}/**/{username}/**/user_data.db' in '{search_path}'")
+    print('null')
+    sys.exit()
 
 
 def get_path_info(path):
@@ -651,18 +656,6 @@ def load_db_into_memory(db_file: str) -> sqlite3.Connection:
         return mem_conn  # Return the in-memory connection
 
 
-def case_insensitive_rglob(path, pattern):
-    if sys.version_info >= (3, 12):
-        return list(path.rglob(pattern, case_sensitive=False))
-    else:
-        pattern_lower = pattern.lower()
-        matches = []
-        for p in path.rglob('*'):
-            if fnmatch.fnmatch(p.name.lower(), pattern_lower):
-                matches.append(p)
-        return matches
-
-
 # MAIN #############################################################################################
 def main():
     """
@@ -690,6 +683,11 @@ def main():
     if META_BASE_PATH:
         meta_path = Path(META_BASE_PATH)
     db = get_metadata_db(meta_path or path, username, network)
+
+    if db is None:
+        log.error(f"The db was not found, exiting.")
+        print('null')
+        sys.exit()
 
     media = lookup(path, db, media_dir, username, network)
     print(json.dumps(media))
