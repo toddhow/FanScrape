@@ -570,18 +570,27 @@ def get_metadata_db(search_path, username, network):
     search_path = Path(search_path).resolve()
 
     while search_path != search_path.parent:
-        db_files = list(
-            search_path.rglob(
-                f"{network}/**/{username}/**/user_data.db", case_sensitive=False
+        try:
+            db_files = list(
+                search_path.rglob(
+                    f"{network}/**/{username}/**/user_data.db", case_sensitive=False
+                )
             )
-        )
+        except TypeError:
+            log.info("Case-insensitive rglob failed, reverting to case-sensitive")
+            db_files = list(
+                search_path.rglob(f"{network}/**/{username}/**/user_data.db")
+            )
         db_files = [db for db in db_files if db.is_file()]
         if db_files:
             return db_files[0]
 
         search_path = search_path.parent
-
-    return None
+    log.error(
+        f"Unable to find matadata file for pattern '{network}/**/{username}/**/user_data.db' in '{search_path}'"
+    )
+    print("null")
+    sys.exit()
 
 
 def get_path_info(path):
@@ -595,9 +604,13 @@ def get_path_info(path):
         If the network is in the path multiple times get the last one
         """
         indexes = [
-            index for index, element in enumerate(path_parts) if element == network
+            index
+            for index, element in enumerate(path_parts)
+            if element == network.lower()
         ]
         index = indexes[-1] if indexes else None
+        if index is None:
+            raise ValueError
         if index + 1 < len(path.parts):
             return path.parts[index + 1], network, Path(*path.parts[: index + 2])
         raise ValueError
@@ -699,7 +712,7 @@ def main():
 
     if sys.argv[1] == "queryScene":
         lookup = lookup_scene
-        if fragment["files"] is not None:
+        if fragment.get("files", None) is not None:
             path = Path(fragment["files"][0]["path"])
         else:
             path = Path(get_scene_path(scrape_id))
@@ -715,6 +728,11 @@ def main():
     if META_BASE_PATH:
         meta_path = Path(META_BASE_PATH)
     db = get_metadata_db(meta_path or path, username, network)
+
+    if db is None:
+        log.error("The db was not found, exiting.")
+        print("null")
+        sys.exit()
 
     media = lookup(path, db, media_dir, username, network)
     print(json.dumps(media))
