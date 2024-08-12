@@ -553,8 +553,12 @@ def parse_url_to_filename(url: str) -> str:
     converted_filename = converted_array[-1]
     filename = converted_filename.split("?")[0]
     file_no_ext = os.path.splitext(filename)[0]
-    if "_source" in file_no_ext:
+    if sys.version_info >= (3, 9):
         file_no_ext = file_no_ext.removesuffix("_source")
+    else:
+        file_no_ext = (
+            file_no_ext[:-7] if file_no_ext.endswith("_source") else file_no_ext
+        )
     return file_no_ext
 
 
@@ -574,7 +578,14 @@ def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     res["details"] = sanitize_string(row[1])
     if not row[3]:
         trimmed_filename: str = os.path.splitext(filename)[0]
-        trimmed_filename = trimmed_filename.removesuffix("_source")
+        if sys.version_info >= (3, 9):
+            trimmed_filename = trimmed_filename.removesuffix("_source")
+        else:
+            trimmed_filename = (
+                trimmed_filename[:-7]
+                if trimmed_filename.endswith("_source")
+                else trimmed_filename
+            )
         res["code"] = trimmed_filename
     else:
         file_code = parse_url_to_filename(row[3])
