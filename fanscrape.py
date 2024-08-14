@@ -543,15 +543,38 @@ def format_title(title, username, date, scene_index, scene_count):
     return f"{f_title}{scene_info}"
 
 
-def parse_url_to_filename(url: str) -> str:
+def parse_row_to_studio_code(row: dict = {}) -> str:
     """
-    Parse a URL to a filename.
+    Parse a row dictionary to a studio code.
     """
-    converted_url = urlparse(url)
-    converted_path = converted_url.path
-    converted_array = converted_path.split("/")
-    converted_filename = converted_array[-1]
-    filename = converted_filename.split("?")[0]
+    if row == {}:
+        return ""
+    if not isinstance(row, dict):
+        return ""
+    if row[3]:
+        converted_url = urlparse(row[3])
+        converted_path = converted_url.path
+        converted_array = converted_path.split("/")
+        converted_filename = converted_array[-1]
+        filename = converted_filename.split("?")[0]
+        file_no_ext = os.path.splitext(filename)[0]
+        if sys.version_info >= (3, 9):
+            file_no_ext = file_no_ext.removesuffix("_source")
+        else:
+            file_no_ext = (
+                file_no_ext[:-7] if file_no_ext.endswith("_source") else file_no_ext
+            )
+        return file_no_ext
+    else:
+        raise ValueError("No URL found in link column")
+
+
+def parse_filename_to_studio_code(filename: str) -> str:
+    """
+    Parse a filename to a studio code.
+    """
+    if not filename:
+        return ""
     file_no_ext = os.path.splitext(filename)[0]
     if sys.version_info >= (3, 9):
         file_no_ext = file_no_ext.removesuffix("_source")
@@ -576,20 +599,10 @@ def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     res["date"] = date.strftime("%Y-%m-%d")
     res["title"] = format_title(row[1], username, res["date"], scene_index, scene_count)
     res["details"] = sanitize_string(row[1])
-    if not row[3]:
-        trimmed_filename: str = os.path.splitext(filename)[0]
-        if sys.version_info >= (3, 9):
-            trimmed_filename = trimmed_filename.removesuffix("_source")
-        else:
-            trimmed_filename = (
-                trimmed_filename[:-7]
-                if trimmed_filename.endswith("_source")
-                else trimmed_filename
-            )
-        res["code"] = trimmed_filename
-    else:
-        file_code = parse_url_to_filename(row[3])
-        res["code"] = file_code
+    try:
+        res["code"] = parse_row_to_studio_code(row)
+    except ValueError:
+        res["code"] = parse_filename_to_studio_code(filename)
     if network == "OnlyFans":
         res["urls"] = [f"https://onlyfans.com/{str(row[0])}/{username}"]
     elif network == "Fansly":
