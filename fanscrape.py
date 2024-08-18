@@ -19,6 +19,7 @@ from datetime import datetime
 from html import unescape
 from pathlib import Path
 from typing import Dict
+from urllib.parse import urlparse
 
 try:
     from stashapi import log
@@ -172,7 +173,7 @@ def lookup_scene(file, db, media_dir, username, network):
 
     if api_type in ("Posts", "Stories", "Messages", "Products", "Others"):
         query = f"""
-            SELECT posts.post_id, posts.text, posts.created_at
+            SELECT posts.post_id, posts.text, posts.created_at, medias.link
             FROM {api_type.lower()} AS posts, medias
             WHERE posts.post_id = medias.post_id
             AND medias.filename = ?
@@ -199,7 +200,8 @@ def lookup_scene(file, db, media_dir, username, network):
             query = """
                 SELECT medias.post_id,
                 COALESCE(posts.text, stories.text, messages.text, products.text, others.text, "") as text,
-                COALESCE(posts.created_at, stories.created_at, messages.created_at, products.created_at, others.created_at) as created_at
+                COALESCE(posts.created_at, stories.created_at, messages.created_at, products.created_at, others.created_at) as created_at,
+                medias.link
                 FROM medias
                 LEFT JOIN posts ON medias.post_id = posts.post_id
                 LEFT JOIN stories ON medias.post_id = stories.post_id
@@ -541,6 +543,48 @@ def format_title(title, username, date, scene_index, scene_count):
     return f"{f_title}{scene_info}"
 
 
+def parse_row_to_studio_code(row: dict = {}) -> str:
+    """
+    Parse a row dictionary to a studio code.
+    """
+    if row == {}:
+        return ""
+    if not isinstance(row, dict):
+        return ""
+    if row[3]:
+        converted_url = urlparse(row[3])
+        converted_path = converted_url.path
+        converted_array = converted_path.split("/")
+        converted_filename = converted_array[-1]
+        filename = converted_filename.split("?")[0]
+        file_no_ext = os.path.splitext(filename)[0]
+        if sys.version_info >= (3, 9):
+            file_no_ext = file_no_ext.removesuffix("_source")
+        else:
+            file_no_ext = (
+                file_no_ext[:-7] if file_no_ext.endswith("_source") else file_no_ext
+            )
+        return file_no_ext
+    else:
+        raise ValueError("No URL found in link column")
+
+
+def parse_filename_to_studio_code(filename: str) -> str:
+    """
+    Parse a filename to a studio code.
+    """
+    if not filename:
+        return ""
+    file_no_ext = os.path.splitext(filename)[0]
+    if sys.version_info >= (3, 9):
+        file_no_ext = file_no_ext.removesuffix("_source")
+    else:
+        file_no_ext = (
+            file_no_ext[:-7] if file_no_ext.endswith("_source") else file_no_ext
+        )
+    return file_no_ext
+
+
 def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     """
     Process a database row and format post details.
@@ -555,7 +599,10 @@ def process_row(row, username, network, filename, scene_index=0, scene_count=0):
     res["date"] = date.strftime("%Y-%m-%d")
     res["title"] = format_title(row[1], username, res["date"], scene_index, scene_count)
     res["details"] = sanitize_string(row[1])
-    res["code"] = filename
+    try:
+        res["code"] = parse_row_to_studio_code(row)
+    except ValueError:
+        res["code"] = parse_filename_to_studio_code(filename)
     if network == "OnlyFans":
         res["urls"] = [f"https://onlyfans.com/{str(row[0])}/{username}"]
     elif network == "Fansly":

@@ -16,7 +16,7 @@ jobs:
         with:
           type: "zip"
           filename: "fanscrape.zip"
-          exclusions: "*.git* .editorconfig"
+          exclusions: "*.git* .editorconfig .flake8 .pre-commit-config.yaml"
       - name: Upload Release
         uses: ncipollo/release-action@v1.14.0
         with:
