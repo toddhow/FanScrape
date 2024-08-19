@@ -17,6 +17,7 @@ import time
 import uuid
 from datetime import datetime
 from html import unescape
+from io import StringIO
 from pathlib import Path
 from typing import Dict
 from urllib.parse import urlparse
@@ -29,6 +30,15 @@ except ModuleNotFoundError:
     print(
         "You need to install the stashapp-tools (stashapi) python module. (cmd): "
         "pip install stashapp-tools",
+        file=sys.stderr,
+    )
+    sys.exit()
+
+try:
+    from markdown import Markdown
+except ModuleNotFoundError:
+    print(
+        "You need to install the markdown python module. (cmd): pip install markdown",
         file=sys.stderr,
     )
     sys.exit()
@@ -82,6 +92,23 @@ CACHE_FILE = config["cache_file"]
 def convert_datetime(val):
     """Convert ISO 8601 datetime to datetime.datetime object."""
     return datetime.fromisoformat(val.decode())
+
+
+def unmark_element(element, stream=None):
+    if stream is None:
+        stream = StringIO()
+    if element.text:
+        stream.write(element.text)
+    for sub in element:
+        unmark_element(sub, stream)
+    if element.tail:
+        stream.write(element.tail)
+    return stream.getvalue()
+
+
+Markdown.output_formats["plain"] = unmark_element
+__md = Markdown(output_format="plain")
+__md.stripTopLevelTags = False
 
 
 # STASH ############################################################################################
@@ -497,6 +524,13 @@ def get_performer_images(path):
     return encoded_images
 
 
+def remove_markdown_in_title(title):
+    """
+    Remove markdown characters in the title.
+    """
+    return __md.convert(title)
+
+
 def truncate_title(title, max_length):
     """
     Truncate title to provided maximum length while preserving word boundaries.
@@ -523,6 +557,8 @@ def format_title(title, username, date, scene_index, scene_count):
         return f"{username} - {date}{scene_info}"
 
     title = sanitize_string(title)
+
+    title = remove_markdown_in_title(title)
 
     f_title = truncate_title(title.split("\n")[0].strip(), MAX_TITLE_LENGTH)
     scene_info = f" ({scene_index})" if scene_index > 0 else ""
