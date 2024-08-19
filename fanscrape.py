@@ -543,13 +543,15 @@ def format_title(title, username, date, scene_index, scene_count):
     return f"{f_title}{scene_info}"
 
 
-def parse_row_to_studio_code(row: dict = {}) -> str:
+def parse_row_to_studio_code(row: tuple = ()) -> str:
     """
     Parse a row dictionary to a studio code.
     """
-    if row == {}:
+    if row == ():
+        log.error("No row found")
         return ""
-    if not isinstance(row, dict):
+    if not isinstance(row, tuple):
+        log.error(f"Invalid row type: {type(row)}")
         return ""
     if row[3]:
         converted_url = urlparse(row[3])
@@ -671,6 +673,14 @@ def validate_datetime(timestamp):
     """
     Check if timestamp is ISO8601 format
     """
+    if not timestamp:
+        log.error("No timestamp provided")
+        return False
+    if isinstance(timestamp, datetime):
+        return False
+    if not isinstance(timestamp, str):
+        log.error(f"Invalid timestamp type: {type(timestamp)}")
+        return False
     try:
         datetime.fromisoformat(timestamp)
     except Exception as e:
