@@ -200,7 +200,7 @@ def lookup_scene(file, db, media_dir, username, network):
 
     if api_type in ("Posts", "Stories", "Messages", "Products", "Others"):
         query = f"""
-            SELECT posts.post_id, posts.text, posts.created_at, medias.link
+            SELECT posts.post_id, posts.text, posts.created_at, medias.link, medias.linked
             FROM {api_type.lower()} AS posts, medias
             WHERE posts.post_id = medias.post_id
             AND medias.filename = ?
@@ -208,8 +208,8 @@ def lookup_scene(file, db, media_dir, username, network):
         c.execute(query, (file.name,))
     else:
         log.error(f"Unknown api_type {api_type} for post: {post_id}")
-        print("null")
-        sys.exit()
+        # print("null")
+        # sys.exit()
 
     log.debug(f"Found {len(result)} video(s) in post {post_id}")
     if len(result) > 1:
@@ -220,7 +220,7 @@ def lookup_scene(file, db, media_dir, username, network):
         scene_index = 0
         scene_count = 0
 
-    row = c.fetchone()
+    row = c.fetchone() or (None, None, None, None, None)
 
     try:
         if row[1] is None:
@@ -228,7 +228,8 @@ def lookup_scene(file, db, media_dir, username, network):
                 SELECT medias.post_id,
                 COALESCE(posts.text, stories.text, messages.text, products.text, others.text, "") as text,
                 COALESCE(posts.created_at, stories.created_at, messages.created_at, products.created_at, others.created_at) as created_at,
-                medias.link
+                medias.link,
+                medias.linked
                 FROM medias
                 LEFT JOIN posts ON medias.post_id = posts.post_id
                 LEFT JOIN stories ON medias.post_id = stories.post_id
@@ -589,7 +590,11 @@ def parse_row_to_studio_code(row: tuple = ()) -> str:
     if not isinstance(row, tuple):
         log.error(f"Invalid row type: {type(row)}")
         return ""
-    if row[3]:
+
+    if row[3] or row[4]:
+        if row[3]:
+            if row[3] == "www.onlyfans.com":
+                row = (row[0], row[1], row[2], None, row[4])
         converted_url = urlparse(row[3])
         converted_path = converted_url.path
         converted_array = converted_path.split("/")
