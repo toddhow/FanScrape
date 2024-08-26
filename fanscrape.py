@@ -607,7 +607,7 @@ def parse_row_to_studio_code(row: tuple = ()) -> str:
         if row[3]:
             if row[3] == "www.onlyfans.com":
                 row = (row[0], row[1], row[2], None, row[4])
-        converted_url = urlparse(row[3])
+        converted_url = urlparse(row[3]) if row[3] else urlparse(row[4])
         converted_path = converted_url.path
         converted_array = converted_path.split("/")
         converted_filename = converted_array[-1]
