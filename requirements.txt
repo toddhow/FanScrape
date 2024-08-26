@@ -1,2 +1,3 @@
 stashapp-tools
 sqlite3
+markdown

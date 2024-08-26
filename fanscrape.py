@@ -17,6 +17,7 @@ import time
 import uuid
 from datetime import datetime
 from html import unescape
+from io import StringIO
 from pathlib import Path
 from typing import Dict
 from urllib.parse import urlparse
@@ -29,6 +30,15 @@ except ModuleNotFoundError:
     print(
         "You need to install the stashapp-tools (stashapi) python module. (cmd): "
         "pip install stashapp-tools",
+        file=sys.stderr,
+    )
+    sys.exit()
+
+try:
+    from markdown import Markdown
+except ModuleNotFoundError:
+    print(
+        "You need to install the markdown python module. (cmd): pip install markdown",
         file=sys.stderr,
     )
     sys.exit()
@@ -51,7 +61,18 @@ default_config = {
     "cache_dir": "cache",  # Directory to store cached base64 encoded images.
     "cache_file": "cache.json",  # File to store cache information in.
     "meta_base_path": None,  # Base path to search for 'user_data.db' files.
+    "direct_db": {
+        "override": False,
+        "db_format": None,
+    },  # Allow overriding the database path.
 }
+"""
+"direct_db": {
+    "override" : True, # Allow overriding the database path.
+    "db_format" : "/path/to/the/{network}/{username}/Metadata/user_data.db", # Format of the database path.
+}
+"""
+
 
 # Read config file
 try:
@@ -77,11 +98,29 @@ META_BASE_PATH = config["meta_base_path"]
 CACHE_TIME = config["cache_time"]
 CACHE_DIR = config["cache_dir"]
 CACHE_FILE = config["cache_file"]
+DIRECT_DB = config["direct_db"]
 
 
 def convert_datetime(val):
     """Convert ISO 8601 datetime to datetime.datetime object."""
     return datetime.fromisoformat(val.decode())
+
+
+def unmark_element(element, stream=None):
+    if stream is None:
+        stream = StringIO()
+    if element.text:
+        stream.write(element.text)
+    for sub in element:
+        unmark_element(sub, stream)
+    if element.tail:
+        stream.write(element.tail)
+    return stream.getvalue()
+
+
+Markdown.output_formats["plain"] = unmark_element
+__md = Markdown(output_format="plain")
+__md.stripTopLevelTags = False
 
 
 # STASH ############################################################################################
@@ -498,6 +537,13 @@ def get_performer_images(path):
     return encoded_images
 
 
+def remove_markdown_in_title(title):
+    """
+    Remove markdown characters in the title.
+    """
+    return __md.convert(title)
+
+
 def truncate_title(title, max_length):
     """
     Truncate title to provided maximum length while preserving word boundaries.
@@ -524,6 +570,8 @@ def format_title(title, username, date, scene_index, scene_count):
         return f"{username} - {date}{scene_info}"
 
     title = sanitize_string(title)
+
+    title = remove_markdown_in_title(title)
 
     f_title = truncate_title(title.split("\n")[0].strip(), MAX_TITLE_LENGTH)
     scene_info = f" ({scene_index})" if scene_index > 0 else ""
@@ -554,7 +602,11 @@ def parse_row_to_studio_code(row: tuple = ()) -> str:
     if not isinstance(row, tuple):
         log.error(f"Invalid row type: {type(row)}")
         return ""
+
     if row[3] or row[4]:
+        if row[3]:
+            if row[3] == "www.onlyfans.com":
+                row = (row[0], row[1], row[2], None, row[4])
         converted_url = urlparse(row[3]) if row[3] else urlparse(row[4])
         converted_path = converted_url.path
         converted_array = converted_path.split("/")
@@ -617,6 +669,21 @@ def get_metadata_db(search_path, username, network):
     """
     Recursively search for 'user_data.db' file starting from 'search_path'
     """
+    if "override" in DIRECT_DB and DIRECT_DB["override"]:
+        log.debug("Using direct database path override")
+        db_file = Path(
+            DIRECT_DB["db_format"].format(username=username, network=network)
+        )
+        log.debug(f"Path to db_file: {db_file}")
+        db_file = db_file.joinpath("user_data.db")
+
+        if db_file.is_file():
+            log.debug(f"Using direct database path: {db_file}")
+            return db_file
+        else:
+            log.error(f"The {db_file} path doesn't match a file.")
+    if META_BASE_PATH:
+        search_path = Path(META_BASE_PATH).resolve()
     search_path = Path(search_path).resolve()
 
     while search_path != search_path.parent:
@@ -766,8 +833,8 @@ def main():
     """
     fragment = json.loads(sys.stdin.read())
     scrape_id = fragment["id"]
-    meta_path = None
 
+    start_time = time.monotonic()
     if sys.argv[1] == "queryScene":
         lookup = lookup_scene
         if fragment.get("files", None) is not None:
@@ -782,10 +849,18 @@ def main():
         print("null")
         sys.exit()
 
+    log.debug(
+        f"Script runtime: after scene path: {time.monotonic() - start_time} seconds"
+    )
     username, network, media_dir = get_path_info(path)
-    if META_BASE_PATH:
-        meta_path = Path(META_BASE_PATH)
-    db = get_metadata_db(meta_path or path, username, network)
+    log.debug(
+        f"Script runtime: after scene path: {time.monotonic() - start_time} seconds"
+    )
+
+    db = get_metadata_db(path, username, network)
+    log.debug(
+        f"Script runtime: after metadata db: {time.monotonic() - start_time} seconds"
+    )
 
     if db is None:
         log.error("The db was not found, exiting.")
@@ -793,7 +868,12 @@ def main():
         sys.exit()
 
     media = lookup(path, db, media_dir, username, network)
+    log.debug(
+        f"Script runtime: after media lookup: {time.monotonic() - start_time} seconds"
+    )
     print(json.dumps(media))
+
+    log.debug(f"Script runtime: total runtime: {time.monotonic() - start_time} seconds")
     sys.exit()
 
 
