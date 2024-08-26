@@ -11,12 +11,14 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches: main
+          tag_prefix: v
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: "zip"
           filename: "fanscrape.zip"
-          exclusions: "*.git* .editorconfig .flake8 .pre-commit-config.yaml"
+          exclusions: "*.git* .editorconfig .flake8 .pre-commit-config.yaml README.md build_site.sh"
       - name: Upload Release
         uses: ncipollo/release-action@v1.14.0
         with:
@@ -24,3 +26,8 @@ jobs:
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: Release ${{ steps.tag_version.outputs.new_tag }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: true
+          makeLatest: ${{ github.ref == 'refs/heads/main' }}
+          prerelease: ${{ github.ref != 'refs/heads/main' }}
+          updateOnlyUnreleased: true
+          allowUpdates: true
