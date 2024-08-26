@@ -27,15 +27,16 @@ Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.
 
 ## Installation
 
-***Breaking Change:***
-As of commit `76f80f4`, this code requires the Python module `markdown` installed where Stash runs (this could be inside your docker container). Likely a command such as:
-```shell
-pip install markdown
-```
-or
-```shell
-pip3.12 install markdown --break-system-packages
-```
+> [!WARNING] 
+> ***Breaking Change:***
+> As of commit `76f80f4`, this code requires the Python module `markdown` installed where Stash runs (this could be inside your docker container). Likely a command such as:
+> ```shell
+> pip install markdown
+> ```
+> or
+> ```shell
+> pip3.12 install markdown --break-system-packages
+> ```
 
 ### Managed
 
