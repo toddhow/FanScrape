@@ -61,7 +61,18 @@ default_config = {
     "cache_dir": "cache",  # Directory to store cached base64 encoded images.
     "cache_file": "cache.json",  # File to store cache information in.
     "meta_base_path": None,  # Base path to search for 'user_data.db' files.
+    "direct_db": {
+        "override": False,
+        "db_format": None,
+    },  # Allow overriding the database path.
 }
+"""
+"direct_db": {
+    "override" : True, # Allow overriding the database path.
+    "db_format" : "/path/to/the/{network}/{username}/Metadata/user_data.db", # Format of the database path.
+}
+"""
+
 
 # Read config file
 try:
@@ -87,6 +98,7 @@ META_BASE_PATH = config["meta_base_path"]
 CACHE_TIME = config["cache_time"]
 CACHE_DIR = config["cache_dir"]
 CACHE_FILE = config["cache_file"]
+DIRECT_DB = config["direct_db"]
 
 
 def convert_datetime(val):
@@ -657,6 +669,21 @@ def get_metadata_db(search_path, username, network):
     """
     Recursively search for 'user_data.db' file starting from 'search_path'
     """
+    if "override" in DIRECT_DB and DIRECT_DB["override"]:
+        log.debug("Using direct database path override")
+        db_file = Path(
+            DIRECT_DB["db_format"].format(username=username, network=network)
+        )
+        log.debug(f"Path to db_file: {db_file}")
+        db_file = db_file.joinpath("user_data.db")
+
+        if db_file.is_file():
+            log.debug(f"Using direct database path: {db_file}")
+            return db_file
+        else:
+            log.error(f"The {db_file} path doesn't match a file.")
+    if META_BASE_PATH:
+        search_path = Path(META_BASE_PATH).resolve()
     search_path = Path(search_path).resolve()
 
     while search_path != search_path.parent:
@@ -806,8 +833,8 @@ def main():
     """
     fragment = json.loads(sys.stdin.read())
     scrape_id = fragment["id"]
-    meta_path = None
 
+    start_time = time.monotonic()
     if sys.argv[1] == "queryScene":
         lookup = lookup_scene
         if fragment.get("files", None) is not None:
@@ -822,10 +849,18 @@ def main():
         print("null")
         sys.exit()
 
+    log.debug(
+        f"Script runtime: after scene path: {time.monotonic() - start_time} seconds"
+    )
     username, network, media_dir = get_path_info(path)
-    if META_BASE_PATH:
-        meta_path = Path(META_BASE_PATH)
-    db = get_metadata_db(meta_path or path, username, network)
+    log.debug(
+        f"Script runtime: after scene path: {time.monotonic() - start_time} seconds"
+    )
+
+    db = get_metadata_db(path, username, network)
+    log.debug(
+        f"Script runtime: after metadata db: {time.monotonic() - start_time} seconds"
+    )
 
     if db is None:
         log.error("The db was not found, exiting.")
@@ -833,7 +868,12 @@ def main():
         sys.exit()
 
     media = lookup(path, db, media_dir, username, network)
+    log.debug(
+        f"Script runtime: after media lookup: {time.monotonic() - start_time} seconds"
+    )
     print(json.dumps(media))
+
+    log.debug(f"Script runtime: total runtime: {time.monotonic() - start_time} seconds")
     sys.exit()
 
 
