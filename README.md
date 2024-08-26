@@ -7,7 +7,7 @@ This script is a companion to the OnlyFans/Fansly data scrapers by DIGITALCRIMIN
 Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.db' SQLite files.
 
 > [!NOTE]\
-> This script requires python3, stashapp-tools, and sqlite3.
+> This script requires python3, stashapp-tools, markdown, and sqlite3.
 
 ## Scraper Support
 
