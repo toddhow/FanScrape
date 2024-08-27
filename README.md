@@ -27,6 +27,17 @@ Above tools download posts from OnlyFans/Fansly and save metadata to 'user_data.
 
 ## Installation
 
+> [!WARNING] 
+> ***Breaking Change:***
+> As of commit `76f80f4`, this code requires the Python module `markdown` installed where Stash runs (this could be inside your docker container). Likely a command such as:
+> ```shell
+> pip install markdown
+> ```
+> or
+> ```shell
+> pip3.12 install markdown --break-system-packages
+> ```
+
 ### Managed
 
 - Go to Settings > Metadata Providers > Available Scrapers.
@@ -107,7 +118,7 @@ The date will contain the date on which the post was created.
 
 ### Code
 
-The code will contain the `post_id` of the post as stored in the database. This may be the same across multiple scenes if they originate from the same OnlyFans post.
+The code will contain the unique file id based on the value in either `<link>` or `<linked>` columns of the `medias` table.
 
 ### Studio
 
@@ -191,9 +202,14 @@ The values in the default config are as follows:
     "cache_dir": "cache",                   # Directory to store cached base64 encoded images.
     "cache_file": "cache.json",             # File to store cache information in.
     "meta_base_path": None,                 # Base path to search for 'user_data.db' files.
+    "direct_db": {
+        "override": False,
+        "db_format": "/path/to/the/{network}/{username}/Metadata/user_data.db", # Format of the database path.
+    },  # Allow overriding the database path.
 }
 ```
 
 ## Thanks
 
 Thank you to [WithoutPants](https://github.com/WithoutPants) for originally writing the script, and to [xantor](https://github.com/xantror) for maintaining the script as well as writing the README.
+Additionally [Jakan-Kink](https://github.com/Jakan-Kink), who has been making some significant updates since the beginning of August 2024.
