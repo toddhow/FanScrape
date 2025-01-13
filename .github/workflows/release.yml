@@ -18,7 +18,7 @@ jobs:
           filename: "fanscrape.zip"
           exclusions: "*.git* .editorconfig .flake8 .pre-commit-config.yaml"
       - name: Upload Release
-        uses: ncipollo/release-action@v1.14.0
+        uses: ncipollo/release-action@v1.15.0
         with:
           artifacts: "fanscrape.zip"
           tag: ${{ steps.tag_version.outputs.new_tag }}
